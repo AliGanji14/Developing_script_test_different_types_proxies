@@ -5,30 +5,33 @@ import time
 
 
 PROXY = os.getenv('PROXY')
-TARGET_URL = os.getenv('TARGET_URL')
+TARGET_URL = "https://api.myip.com"
 CHANGE_IP_URL = os.getenv('CHANGE_IP_URL')
 
 proxies = {'https': PROXY, 'http': PROXY}
 
+request_count = 0 
+
 while True:
     try:
-        response_one = requests.get(TARGET_URL, proxies=proxies, timeout=10)
-        print(response_one.text)
+        response = requests.get(TARGET_URL, proxies=proxies, timeout=10)
+        print(response.text)
 
-        response_second = requests.get(
-            CHANGE_IP_URL, proxies=proxies, timeout=10)
-        change_data = response_second.json()
+        with open("log_proxy.txt", "a") as log_file:
+            log_file.write(f"Response: {response.text}\n")
 
-        if "error_message" in change_data:
-            print(change_data['error_message'])
-            wait_time = change_data.get('left',15)
-            print(f"Waiting {wait_time} seconds before retrying...")
-            time.sleep(wait_time)
-        else:
-            print(change_data)
-        with open("log_proxy.txt", "a") as a:
-            a.write(
-                f"Request_One: {response_one.text}\nRequest_Second: {response_second.text}\n")
+        request_count += 1
+
+        if request_count >= 10:
+            change_response = requests.get(CHANGE_IP_URL, proxies=proxies, timeout=10)
+            print(f"Change IP response: {change_response.text}")
+
+            with open("log_proxy.txt", "a") as log_file:
+                log_file.write(f"Change IP Response: {change_response.text}\n")
+
+            request_count = 0
+
     except Exception as e:
-        print(e)
+        print(f"Error: {e}")
+
     time.sleep(5)
